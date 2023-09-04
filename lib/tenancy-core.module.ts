@@ -199,7 +199,8 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
 
     if (!moduleOptions) {
-      throw new BadRequestException(`Tenant options are mandatory`);
+      console.log('`Tenant options are mandatory`');
+      // throw new BadRequestException(`Tenant options are mandatory`);
     }
 
     // Extract the tenant idetifier
@@ -212,7 +213,9 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     } else {
       // Validate if tenant identifier token is present
       if (!tenantIdentifier) {
-        throw new BadRequestException(`${tenantIdentifier} is mandatory`);
+        console.log('tenantIdentifier');
+        return 'error';
+        //  throw new BadRequestException(`${tenantIdentifier} is mandatory`);
       }
 
       return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
@@ -251,7 +254,8 @@ export class TenancyCoreModule implements OnApplicationShutdown {
 
     // Validate if tenant id is present
     if (this.isEmpty(tenantId)) {
-      throw new BadRequestException(`${tenantIdentifier} is not supplied`);
+      console.log('this.isEmpty(tenantId)');
+      //  throw new BadRequestException(`${tenantIdentifier} is not supplied`);
     }
 
     return tenantId;
@@ -290,7 +294,8 @@ export class TenancyCoreModule implements OnApplicationShutdown {
 
     // Validate if tenant identifier token is present
     if (this.isEmpty(tenantId)) {
-      throw new BadRequestException(`Tenant ID is mandatory`);
+      console.log('Validate if tenant identifier token is present');
+      //  throw new BadRequestException(`Tenant ID is mandatory`);
     }
 
     return tenantId;
@@ -316,7 +321,12 @@ export class TenancyCoreModule implements OnApplicationShutdown {
   ): Promise<Connection> {
     // Check if validator is set, if so call the `validate` method on it
     if (moduleOptions.validator) {
-      await moduleOptions.validator(tenantId).validate();
+      try {
+        await moduleOptions.validator(tenantId).validate();
+      } catch (error) {
+        console.log(error);
+        throw new BadRequestException(error);
+      }
     }
 
     // Check if tenantId exist in the connection map

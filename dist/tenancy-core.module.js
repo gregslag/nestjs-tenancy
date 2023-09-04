@@ -105,7 +105,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
     static getTenant(req, moduleOptions, adapterHost) {
         const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
         if (!moduleOptions) {
-            throw new common_1.BadRequestException(`Tenant options are mandatory`);
+            console.log('`Tenant options are mandatory`');
         }
         const { tenantIdentifier = null, isTenantFromSubdomain = false } = moduleOptions;
         if (isTenantFromSubdomain) {
@@ -113,7 +113,8 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
         }
         else {
             if (!tenantIdentifier) {
-                throw new common_1.BadRequestException(`${tenantIdentifier} is mandatory`);
+                console.log('tenantIdentifier');
+                return 'error';
             }
             return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
         }
@@ -130,7 +131,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             tenantId = req.get(`${tenantIdentifier}`) || '';
         }
         if (this.isEmpty(tenantId)) {
-            throw new common_1.BadRequestException(`${tenantIdentifier} is not supplied`);
+            console.log('this.isEmpty(tenantId)');
         }
         return tenantId;
     }
@@ -148,14 +149,20 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             }
         }
         if (this.isEmpty(tenantId)) {
-            throw new common_1.BadRequestException(`Tenant ID is mandatory`);
+            console.log('Validate if tenant identifier token is present');
         }
         return tenantId;
     }
     static getConnection(tenantId, moduleOptions, connMap, modelDefMap) {
         return __awaiter(this, void 0, void 0, function* () {
             if (moduleOptions.validator) {
-                yield moduleOptions.validator(tenantId).validate();
+                try {
+                    yield moduleOptions.validator(tenantId).validate();
+                }
+                catch (error) {
+                    console.log(error);
+                    throw new common_1.BadRequestException(error);
+                }
             }
             const exists = connMap.has(tenantId);
             if (exists) {
