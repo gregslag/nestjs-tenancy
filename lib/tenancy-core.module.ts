@@ -355,7 +355,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     modelDefMap.forEach(async (definition: any) => {
       const { name, schema, collection } = definition;
 
-      const modelCreated: Model<unknown> = connection.model(
+      const modelCreated: Model<any> = connection.model(
         name,
         schema,
         collection,
