@@ -105,7 +105,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
     static getTenant(req, moduleOptions, adapterHost) {
         const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
         if (!moduleOptions) {
-            console.log('`Tenant options are mandatory`');
+            throw new common_1.BadRequestException(`Tenant options are mandatory`);
         }
         const { tenantIdentifier = null, isTenantFromSubdomain = false } = moduleOptions;
         if (isTenantFromSubdomain) {
@@ -113,8 +113,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
         }
         else {
             if (!tenantIdentifier) {
-                console.log('tenantIdentifier');
-                return 'error';
+                throw new common_1.BadRequestException(`${tenantIdentifier} is mandatory`);
             }
             return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
         }
@@ -131,7 +130,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             tenantId = req.get(`${tenantIdentifier}`) || '';
         }
         if (this.isEmpty(tenantId)) {
-            console.log('this.isEmpty(tenantId)');
+            throw new common_1.BadRequestException(`${tenantIdentifier} is not supplied`);
         }
         return tenantId;
     }
@@ -149,20 +148,14 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             }
         }
         if (this.isEmpty(tenantId)) {
-            console.log('Validate if tenant identifier token is present');
+            throw new common_1.BadRequestException(`Tenant ID is mandatory`);
         }
         return tenantId;
     }
     static getConnection(tenantId, moduleOptions, connMap, modelDefMap) {
         return __awaiter(this, void 0, void 0, function* () {
             if (moduleOptions.validator) {
-                try {
-                    yield moduleOptions.validator(tenantId).validate();
-                }
-                catch (error) {
-                    console.log(error);
-                    throw new common_1.BadRequestException(error);
-                }
+                yield moduleOptions.validator(tenantId).validate();
             }
             const exists = connMap.has(tenantId);
             if (exists) {
@@ -172,9 +165,14 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
                 }
                 return connection;
             }
+            const useDbOptions = {
+                useCache: true,
+                noListener: true,
+            };
             const uri = yield Promise.resolve(moduleOptions.uri(tenantId));
             const connectionOptions = Object.assign({ useNewUrlParser: true, useUnifiedTopology: true }, moduleOptions.options());
             const connection = (0, mongoose_1.createConnection)(uri, connectionOptions);
+            const tenantConnection = connection.useDb(tenantId, useDbOptions);
             modelDefMap.forEach((definition) => __awaiter(this, void 0, void 0, function* () {
                 const { name, schema, collection } = definition;
                 const modelCreated = connection.model(name, schema, collection);
@@ -182,8 +180,8 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
                     yield modelCreated.createCollection();
                 }
             }));
-            connMap.set(tenantId, connection);
-            return connection;
+            connMap.set(tenantId, tenantConnection);
+            return tenantConnection;
         });
     }
     static createConnectionMapProvider() {

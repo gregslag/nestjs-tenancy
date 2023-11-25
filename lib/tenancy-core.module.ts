@@ -199,8 +199,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
 
     if (!moduleOptions) {
-      console.log('`Tenant options are mandatory`');
-      // throw new BadRequestException(`Tenant options are mandatory`);
+      throw new BadRequestException(`Tenant options are mandatory`);
     }
 
     // Extract the tenant idetifier
@@ -213,9 +212,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     } else {
       // Validate if tenant identifier token is present
       if (!tenantIdentifier) {
-        console.log('tenantIdentifier');
-        return 'error';
-        //  throw new BadRequestException(`${tenantIdentifier} is mandatory`);
+        throw new BadRequestException(`${tenantIdentifier} is mandatory`);
       }
 
       return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
@@ -254,8 +251,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
 
     // Validate if tenant id is present
     if (this.isEmpty(tenantId)) {
-      console.log('this.isEmpty(tenantId)');
-      //  throw new BadRequestException(`${tenantIdentifier} is not supplied`);
+      throw new BadRequestException(`${tenantIdentifier} is not supplied`);
     }
 
     return tenantId;
@@ -294,8 +290,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
 
     // Validate if tenant identifier token is present
     if (this.isEmpty(tenantId)) {
-      console.log('Validate if tenant identifier token is present');
-      //  throw new BadRequestException(`Tenant ID is mandatory`);
+      throw new BadRequestException(`Tenant ID is mandatory`);
     }
 
     return tenantId;
@@ -321,12 +316,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
   ): Promise<Connection> {
     // Check if validator is set, if so call the `validate` method on it
     if (moduleOptions.validator) {
-      try {
-        await moduleOptions.validator(tenantId).validate();
-      } catch (error) {
-        console.log(error);
-        throw new BadRequestException(error);
-      }
+      await moduleOptions.validator(tenantId).validate();
     }
 
     // Check if tenantId exist in the connection map
@@ -349,6 +339,10 @@ export class TenancyCoreModule implements OnApplicationShutdown {
       return connection;
     }
 
+    const useDbOptions = {
+      useCache: true,
+      noListener: true,
+    };
     // Otherwise create a new connection
     const uri = await Promise.resolve(moduleOptions.uri(tenantId));
     // Connection options
@@ -360,7 +354,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
 
     // Create the connection
     const connection = createConnection(uri, connectionOptions);
-
+    const tenantConnection = connection.useDb(tenantId, useDbOptions);
     // Attach connection to the models passed in the map
     modelDefMap.forEach(async (definition: any) => {
       const { name, schema, collection } = definition;
@@ -379,9 +373,9 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     });
 
     // Add the new connection to the map
-    connMap.set(tenantId, connection);
+    connMap.set(tenantId, tenantConnection);
 
-    return connection;
+    return tenantConnection;
   }
 
   /**
