@@ -8,6 +8,8 @@ export declare class TenancyCoreModule implements OnApplicationShutdown {
     static registerAsync(options: TenancyModuleAsyncOptions): DynamicModule;
     onApplicationShutdown(): Promise<void>;
     private static getTenant;
+    private static getTenantFromWebsocketRequest;
+    private static getTenantFromMicroserviceRequest;
     private static getTenantFromRequest;
     private static getTenantFromSubdomain;
     private static getConnection;

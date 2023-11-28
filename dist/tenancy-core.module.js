@@ -22,6 +22,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TenancyCoreModule = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
+const microservices_1 = require("@nestjs/microservices");
 const mongoose_1 = require("mongoose");
 const tenancy_constants_1 = require("./tenancy.constants");
 let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
@@ -102,21 +103,57 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             yield Promise.all([...connectionMap.values()].map((connection) => connection.close()));
         });
     }
-    static getTenant(req, moduleOptions, adapterHost) {
-        const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
+    static getTenant(requestContext, moduleOptions, adapterHost) {
         if (!moduleOptions) {
             throw new common_1.BadRequestException(`Tenant options are mandatory`);
         }
         const { tenantIdentifier = null, isTenantFromSubdomain = false } = moduleOptions;
-        if (isTenantFromSubdomain) {
-            return this.getTenantFromSubdomain(isFastifyAdaptor, req);
+        var data;
+        var contextType = 'http';
+        var context = typeof requestContext.pattern !== 'undefined'
+            ? requestContext.getContext()
+            : requestContext;
+        if (typeof requestContext.pattern !== 'undefined') {
+            contextType = 'rpc';
+            data = requestContext.data;
         }
-        else {
-            if (!tenantIdentifier) {
-                throw new common_1.BadRequestException(`${tenantIdentifier} is mandatory`);
+        if (!tenantIdentifier) {
+            throw new common_1.BadRequestException(`Tenant identifier is mandatory`);
+        }
+        if (contextType === 'http') {
+            var req = context;
+            if (typeof context.switchToHttp !== 'undefined') {
+                req = context.getRequest();
             }
-            return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
+            const isFastifyAdaptor = this.adapterIsFastify(adapterHost);
+            if (isTenantFromSubdomain) {
+                return this.getTenantFromSubdomain(isFastifyAdaptor, req);
+            }
+            else {
+                return this.getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier);
+            }
         }
+        else if (contextType === 'rpc') {
+            return this.getTenantFromMicroserviceRequest(data, tenantIdentifier);
+        }
+        else if (contextType === 'ws') {
+            return this.getTenantFromWebsocketRequest(data, tenantIdentifier);
+        }
+        return '';
+    }
+    static getTenantFromWebsocketRequest(data, tenantIdentifier) {
+        let tenantId = data[tenantIdentifier];
+        if (this.isEmpty(tenantId)) {
+            throw new microservices_1.RpcException(`${tenantIdentifier} is not supplied`);
+        }
+        return tenantId;
+    }
+    static getTenantFromMicroserviceRequest(data, tenantIdentifier) {
+        let tenantId = data[tenantIdentifier];
+        if (this.isEmpty(tenantId)) {
+            throw new microservices_1.RpcException(`${tenantIdentifier} is not supplied`);
+        }
+        return tenantId;
     }
     static getTenantFromRequest(isFastifyAdaptor, req, tenantIdentifier) {
         var _a;
@@ -200,8 +237,8 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
         return {
             provide: tenancy_constants_1.TENANT_CONTEXT,
             scope: common_1.Scope.REQUEST,
-            useFactory: (req, moduleOptions, adapterHost) => this.getTenant(req, moduleOptions, adapterHost),
-            inject: [core_1.REQUEST, tenancy_constants_1.TENANT_MODULE_OPTIONS, tenancy_constants_1.DEFAULT_HTTP_ADAPTER_HOST],
+            useFactory: (context, moduleOptions, adapterHost) => this.getTenant(context, moduleOptions, adapterHost),
+            inject: [microservices_1.CONTEXT, tenancy_constants_1.TENANT_MODULE_OPTIONS, tenancy_constants_1.DEFAULT_HTTP_ADAPTER_HOST],
         };
     }
     static createAsyncProviders(options) {
