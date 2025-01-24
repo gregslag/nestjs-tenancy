@@ -211,10 +211,8 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     const { tenantIdentifier = null, isTenantFromSubdomain = false } =
       moduleOptions;
 
-    if (moduleOptions.skipTenantCheck != null) {
-      if (moduleOptions.skipTenantCheck(req) === true) {
-          return undefined;
-      }
+    if (moduleOptions.skipTenantCheck?.(requestContext)) {
+        return undefined;
     }
 
     // when the call is a microservice call then the context is one of the possible contexts eg TcpContext, RmqContext etc..
@@ -423,7 +421,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
   ): Promise<Connection | undefined> {
     // If the value tenantId is undefined and skipTenantCheck was specified
     // by the user, assume the route should be skipped.
-    if (tenantId == undefined && moduleOptions.skipTenantCheck) {
+    if (!tenantId && moduleOptions.skipTenantCheck) {
       return undefined;
     }
 
