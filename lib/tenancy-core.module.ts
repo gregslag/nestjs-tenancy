@@ -75,7 +75,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
         moduleOptions: TenancyModuleOptions,
         connMap: ConnectionMap,
         modelDefMap: ModelDefinitionMap,
-      ): Promise<Connection> => {
+      ): Promise<Connection | undefined> => {
         return await this.getConnection(
           tenantId,
           moduleOptions,
@@ -136,7 +136,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
         moduleOptions: TenancyModuleOptions,
         connMap: ConnectionMap,
         modelDefMap: ModelDefinitionMap,
-      ): Promise<Connection> => {
+      ): Promise<Connection | undefined> => {
         return await this.getConnection(
           tenantId,
           moduleOptions,
@@ -202,7 +202,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     requestContext: RequestContext & Request,
     moduleOptions: TenancyModuleOptions,
     adapterHost: HttpAdapterHost,
-  ): string {
+  ): string | undefined {
     if (!moduleOptions) {
       throw new BadRequestException(`Tenant options are mandatory`);
     }
@@ -210,6 +210,12 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     // Extract the tenant idetifier
     const { tenantIdentifier = null, isTenantFromSubdomain = false } =
       moduleOptions;
+
+    if (moduleOptions.skipTenantCheck != null) {
+      if (moduleOptions.skipTenantCheck(req) === true) {
+          return undefined;
+      }
+    }
 
     // when the call is a microservice call then the context is one of the possible contexts eg TcpContext, RmqContext etc..
     // when the call is an http call then the requestContext is Request object... (something to do with injection from above)
@@ -415,6 +421,12 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     connMap: ConnectionMap,
     modelDefMap: ModelDefinitionMap,
   ): Promise<Connection> {
+    // If the value tenantId is undefined and skipTenantCheck was specified
+    // by the user, assume the route should be skipped.
+    if (tenantId == undefined && moduleOptions.skipTenantCheck) {
+      return undefined;
+    }
+
     // Check if validator is set, if so call the `validate` method on it
     if (moduleOptions.validator) {
       await moduleOptions.validator(tenantId).validate();
