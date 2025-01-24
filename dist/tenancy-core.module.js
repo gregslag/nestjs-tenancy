@@ -104,14 +104,13 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
         });
     }
     static getTenant(requestContext, moduleOptions, adapterHost) {
+        var _a;
         if (!moduleOptions) {
             throw new common_1.BadRequestException(`Tenant options are mandatory`);
         }
         const { tenantIdentifier = null, isTenantFromSubdomain = false } = moduleOptions;
-        if (moduleOptions.skipTenantCheck != null) {
-            if (moduleOptions.skipTenantCheck(req) === true) {
-                return undefined;
-            }
+        if ((_a = moduleOptions.skipTenantCheck) === null || _a === void 0 ? void 0 : _a.call(moduleOptions, requestContext)) {
+            return undefined;
         }
         var data;
         var contextType = 'http';
@@ -196,7 +195,7 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
     }
     static getConnection(tenantId, moduleOptions, connMap, modelDefMap) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (tenantId == undefined && moduleOptions.skipTenantCheck) {
+            if (!tenantId && moduleOptions.skipTenantCheck) {
                 return undefined;
             }
             if (moduleOptions.validator) {
