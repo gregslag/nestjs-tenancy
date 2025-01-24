@@ -62,6 +62,6 @@
         "**/*.{ts,json}": []
     },
     "dependencies": {
-        "@nestjs/microservices": "^11.0.5"
+        "@nestjs/microservices": "^10.0.3"
     }
 }
