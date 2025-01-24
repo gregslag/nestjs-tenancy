@@ -1,9 +1,11 @@
 import { ModuleMetadata, Type } from '@nestjs/common/interfaces';
+import { Request } from 'express';
 export interface TenancyModuleOptions extends Record<string, any> {
     isTenantFromSubdomain?: boolean;
     tenantIdentifier?: string;
     uri: (uri: string) => Promise<string> | string;
     validator?: (tenantId: string) => TenancyValidator;
+    skipTenantCheck?: (request: Request) => boolean;
     options?: any;
     whitelist?: any;
     forceCreateCollections?: boolean;

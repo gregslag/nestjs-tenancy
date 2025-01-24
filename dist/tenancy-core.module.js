@@ -108,6 +108,11 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
             throw new common_1.BadRequestException(`Tenant options are mandatory`);
         }
         const { tenantIdentifier = null, isTenantFromSubdomain = false } = moduleOptions;
+        if (moduleOptions.skipTenantCheck != null) {
+            if (moduleOptions.skipTenantCheck(req) === true) {
+                return undefined;
+            }
+        }
         var data;
         var contextType = 'http';
         var context = typeof requestContext.pattern !== 'undefined'
@@ -191,6 +196,9 @@ let TenancyCoreModule = TenancyCoreModule_1 = class TenancyCoreModule {
     }
     static getConnection(tenantId, moduleOptions, connMap, modelDefMap) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (tenantId == undefined && moduleOptions.skipTenantCheck) {
+                return undefined;
+            }
             if (moduleOptions.validator) {
                 yield moduleOptions.validator(tenantId).validate();
             }

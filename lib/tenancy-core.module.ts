@@ -420,7 +420,7 @@ export class TenancyCoreModule implements OnApplicationShutdown {
     moduleOptions: TenancyModuleOptions,
     connMap: ConnectionMap,
     modelDefMap: ModelDefinitionMap,
-  ): Promise<Connection> {
+  ): Promise<Connection | undefined> {
     // If the value tenantId is undefined and skipTenantCheck was specified
     // by the user, assume the route should be skipped.
     if (tenantId == undefined && moduleOptions.skipTenantCheck) {

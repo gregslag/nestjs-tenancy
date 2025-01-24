@@ -60,5 +60,8 @@
     },
     "lint-staged": {
         "**/*.{ts,json}": []
+    },
+    "dependencies": {
+        "@nestjs/microservices": "^11.0.5"
     }
 }

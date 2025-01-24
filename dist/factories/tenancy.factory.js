@@ -23,6 +23,9 @@ const createTenancyProviders = (definitions) => {
         providers.push({
             provide: (0, utils_1.getTenantModelToken)(name),
             useFactory(tenantConnection) {
+                if (!tenantConnection) {
+                    return {};
+                }
                 return (tenantConnection.models[name] ||
                     tenantConnection.model(name, schema, collection));
             },
